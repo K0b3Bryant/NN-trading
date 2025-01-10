@@ -23,14 +23,10 @@ Prepare Price Data: Replace the simulated price data in train_trading_agent() wi
 
 Example of simulated data:
 
-python
-Copy code
 np.random.seed(42)
 price_data = np.cumsum(np.random.randn(1000)) + 100  # Simulated price data
 Train the Model: Run the script to train the agent:
 
-bash
-Copy code
 python trading_model.py
 Output: The script prints the total reward for each training episode, showing how the agent learns over time.
 
