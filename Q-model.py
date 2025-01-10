@@ -22,11 +22,31 @@ class QNetwork(nn.Module):
 # Define the Trading Environment
 class TradingEnv:
     def __init__(self, data, window_size):
-        self.data = data
+        self.data = pd.DataFrame({'price': data})
+        self.data['return'] = self.data['price'].pct_change()
+        self.data['rsi'] = self._calculate_rsi(self.data['price'])
+        self.data['macd'], self.data['signal'] = self._calculate_macd(self.data['price'])
+        self.data.dropna(inplace=True)  # Remove rows with NaN values caused by indicator calculations
+
         self.window_size = window_size
         self.action_space = [-1, 0, 1]  # Short, Neutral, Long
         self.current_step = window_size
         self.done = False
+
+    def _calculate_rsi(self, prices, period=14):
+        delta = prices.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        return rsi
+
+    def _calculate_macd(self, prices, short_window=12, long_window=26, signal_window=9):
+        short_ema = prices.ewm(span=short_window, adjust=False).mean()
+        long_ema = prices.ewm(span=long_window, adjust=False).mean()
+        macd = short_ema - long_ema
+        signal = macd.ewm(span=signal_window, adjust=False).mean()
+        return macd, signal
 
     def reset(self):
         self.current_step = self.window_size
@@ -34,14 +54,18 @@ class TradingEnv:
         return self._get_state()
 
     def _get_state(self):
-        return self.data[self.current_step - self.window_size : self.current_step]
+        # Include the price, returns, RSI, and MACD as state features
+        state = self.data.iloc[self.current_step - self.window_size : self.current_step]
+        return state[['price', 'return', 'rsi', 'macd', 'signal']].values.flatten()
 
     def step(self, action):
-        price_now = self.data[self.current_step]
-        price_next = self.data[self.current_step + 1]
+        price_now = self.data.iloc[self.current_step]['price']
+        price_next = self.data.iloc[self.current_step + 1]['price']
         reward = action * (price_next - price_now)  # Reward based on the price change
+
         self.current_step += 1
         self.done = self.current_step >= len(self.data) - 1
+
         return self._get_state(), reward, self.done
 
 # DQN Agent
@@ -103,8 +127,11 @@ class DQNAgent:
 
 # Training Loop
 def train_trading_agent(data, episodes=100, window_size=30, epsilon_decay=0.995, min_epsilon=0.1):
+    # Update state_dim to reflect the inclusion of technical indicators
+    num_features = 5  # price, return, RSI, MACD, signal
+    state_dim = window_size * num_features
     env = TradingEnv(data, window_size)
-    agent = DQNAgent(state_dim=window_size, action_dim=3)
+    agent = DQNAgent(state_dim=state_dim, action_dim=3)
     epsilon = 1.0
 
     for episode in range(episodes):
@@ -113,7 +140,7 @@ def train_trading_agent(data, episodes=100, window_size=30, epsilon_decay=0.995,
 
         while True:
             action = agent.act(state, epsilon)
-            next_state, reward, done = env.step(agent.action_space[action])
+            next_state, reward, done = env.step(env.action_space[action])  # Explicitly map action to space
             agent.remember(state, action, reward, next_state, done)
             agent.train()
             state = next_state
@@ -128,9 +155,9 @@ def train_trading_agent(data, episodes=100, window_size=30, epsilon_decay=0.995,
 
         print(f"Episode {episode + 1}/{episodes}, Total Reward: {total_reward:.2f}")
 
+
 # Example usage
 if __name__ == "__main__":
-    # Generate dummy price data (you can replace this with real data)
     np.random.seed(42)
     price_data = np.cumsum(np.random.randn(1000)) + 100  # Simulated price data
-    train_trading_agent(price_data)
+    train_trading_agent(price_data, episodes=100, window_size=30)
