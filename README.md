@@ -22,12 +22,12 @@ To run the project, you need Python 3.7+ and the following libraries:
 Prepare Price Data: Replace the simulated price data in train_trading_agent() with your own time-series data.
 
 Example of simulated data:
-
 np.random.seed(42)
-price_data = np.cumsum(np.random.randn(1000)) + 100  # Simulated price data
-Train the Model: Run the script to train the agent:
 
-python trading_model.py
+price_data = np.cumsum(np.random.randn(1000)) + 100  # Simulated price data
+
+Train the Model: Run the script to train the agent: python trading_model.py
+
 Output: The script prints the total reward for each training episode, showing how the agent learns over time.
 
 ## Customization
