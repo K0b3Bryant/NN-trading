@@ -18,3 +18,27 @@ To run the project, you need Python 3.7+ and the following libraries:
 - `pandas`
 - `torch`
 
+## How to Run
+Prepare Price Data: Replace the simulated price data in train_trading_agent() with your own time-series data.
+
+Example of simulated data:
+
+python
+Copy code
+np.random.seed(42)
+price_data = np.cumsum(np.random.randn(1000)) + 100  # Simulated price data
+Train the Model: Run the script to train the agent:
+
+bash
+Copy code
+python trading_model.py
+Output: The script prints the total reward for each training episode, showing how the agent learns over time.
+
+## Customization
+Transaction Costs: Adjust the transaction_cost parameter in the TradingEnv class to model real-world trading fees.
+
+State Features: Enhance the state space by adding technical indicators like RSI, MACD, or Bollinger Bands.
+
+Action Space: Modify the action space to include continuous values for fractional trading positions.
+
+Hyperparameters: Tune hyperparameters like learning rate, discount factor, and batch size in the DQNAgent.
