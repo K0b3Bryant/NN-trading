@@ -143,7 +143,7 @@ def train_trading_agent(data, episodes=100, window_size=30, epsilon_decay=0.995,
 
 # Example usage
 if __name__ == "__main__":
-    # Generate dummy price data (you can replace this with real data)
+    # Dummy price data
     np.random.seed(42)
     price_data = np.cumsum(np.random.randn(1000)) + 100  # Simulated price data
     train_trading_agent(price_data)
